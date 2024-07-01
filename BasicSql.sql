@@ -262,10 +262,17 @@ insert into exam_management values (13, 6, 4, 1, 10);
 /********* C. DATE/TIME QUERY *********/
 
 -- 1. Sinh viên có nơi sinh ở Hà Nội và sinh vào tháng 02
-
+		Select * 
+		from student
+		where hometown = N'Hà Nội' and MONTH(birthday) =2
 -- 2. Sinh viên có tuổi lớn hơn 20
-
+		Select * ,(YEAR(GETDATE())-YEAR(birthday)) as tuoi
+		from student
+		where (YEAR(GETDATE())-YEAR(birthday)) > 20
 -- 3. Sinh viên sinh vào mùa xuân năm 1990
+		Select *
+		from student
+		where YEAR(birthday) = 1990 AND MONTH(birthday) < 4
 
 
 
