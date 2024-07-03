@@ -282,21 +282,82 @@ insert into exam_management values (13, 6, 4, 1, 10);
 /********* D. JOIN QUERY *********/
 
 -- 1. Danh sách các sinh viên của khoa ANH VĂN và khoa VẬT LÝ
+	Select student.name , faculty.name AS tenKhoa
+	from student
+	INNER JOIN faculty ON faculty.id = student.faculty_id
+	where faculty.name = N'Anh - Văn' or faculty.name = N'Vật lý'
 
 -- 2. Những sinh viên nam của khoa ANH VĂN và khoa TIN HỌC
-
+	Select student.name, faculty.name AS tenKhoa
+	from student
+	INNER JOIN faculty ON faculty.id = student.faculty_id
+	where (faculty.name = N'Anh - Văn' or faculty.name = N'Vật lý') and student.gender = N'Nam'
 -- 3. Cho biết sinh viên nào có điểm thi lần 1 môn cơ sở dữ liệu cao nhất
+	Select student.name, subject.name AS tenMon, exam_management.mark AS diem
+	from student
+	INNER JOIN exam_management ON exam_management.student_id = student.id
+	INNER JOIN subject ON subject.id = exam_management.subject_id
+	where mark = (select max(mark)
+	from exam_management
+	JOIN subject ON subject.id = exam_management.subject_id
+	where exam_management.number_of_exam_taking = 1 and subject.name = N'Cơ sở dữ liệu')
+
 
 -- 4. Cho biết sinh viên khoa anh văn có tuổi lớn nhất.
-
+	Select student.name, (YEAR(GETDATE()) - YEAR(birthday)) AS tuoi
+	from student
+	JOIN faculty ON faculty.id = student.faculty_id
+	where faculty.name = N'Anh - Văn' 
+	and (YEAR(GETDATE()) - YEAR(birthday)) = (select MAX(YEAR(GETDATE()) - YEAR(birthday)) from student)
+	
 -- 5. Cho biết khoa nào có đông sinh viên nhất
-
+	Select  faculty.name, COUNT(student.id) as soSinhVien
+	from faculty
+	JOIN student on faculty.id = student.faculty_id
+	group by faculty.name
+	having count(student.id) = (
+		select max(soSinhVien) 
+		from ( select count(student.id) as soSinhVien from faculty 
+		JOIN student on faculty.id = student.faculty_id
+		group by faculty.id)
+		as tongSinhVien)
 -- 6. Cho biết khoa nào có đông nữ nhất
-
+	Select faculty.name, COUNT(student.id) as soSinhVien
+	from faculty
+	JOIN student on faculty.id=student.faculty_id
+	where student.gender = N'Nữ'
+	group by faculty.name
+	having count(student.id) = (select max(soSinhVien)
+	from(select COUNT(student.id) as soSinhVien from faculty
+	JOIN student on faculty.id = student.faculty_id 
+	where student.gender = N'Nữ'
+	group by faculty.id)
+	as tongSinhVien)
 -- 7. Cho biết những sinh viên đạt điểm cao nhất trong từng môn
+	Select subject.name ,student.name, exam_management.mark AS diem
+	from (
+		select subject_id,MAX(mark) as max_mark
+		from exam_management
+		group by subject_id
+	) as max_marks
+	JOIN exam_management on exam_management.subject_id = max_marks.subject_id AND exam_management.mark = max_marks.max_mark
+	JOIN student on student.id = exam_management.student_id
+	JOIN subject on subject.id = exam_management.subject_id
 
 -- 8. Cho biết những khoa không có sinh viên học
-
+	Select faculty.name as khoaKhongCoSinhVien
+	from faculty
+	JOIN student ON student.faculty_id = faculty.id
+	where student.id is null
 -- 9. Cho biết sinh viên chưa thi môn cơ sở dữ liệu
-
+	Select student.name as chuaThi
+	from student
+	LEFT JOIN exam_management ON exam_management.student_id = student.id
+	LEFT JOIN subject on subject.id = exam_management.subject_id and subject.name=N'Cơ sở dữ liệu'
+	where exam_management.student_id is null
 -- 10. Cho biết sinh viên nào không thi lần 1 mà có dự thi lần 2
+	Select student.name as tenSinhVien 
+	from student
+	LEFT JOIN exam_management em1 ON student.id = em1.student_id AND em1.number_of_exam_taking = 1
+	INNER JOIN exam_management em2 ON student.id = em2.student_id AND em2.number_of_exam_taking = 2
+	WHERE em1.student_id IS NULL;
